@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "911601653251",
+    "project_id": "jaanu-s-farm",
+    "storage_bucket": "jaanu-s-farm.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:911601653251:android:c9b57d3182ba8026076036",
+        "android_client_info": {
+          "package_name": "com.jaanus.farm"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDW772fNPtYnIYsGXzhAFQhNLM3MK5H0uM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

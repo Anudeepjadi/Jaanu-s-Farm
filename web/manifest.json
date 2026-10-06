@@ -1,11 +1,11 @@
-{
-    "name": "Jaanu's Farm",
-    "short_name": "Jaanu's Farm",
+﻿{
+    "name": "Janus farm's",
+    "short_name": "Janus farm's",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "Jaanu's Farm - Fresh Milk Delivery App",
+    "description": "Janus farm's - Fresh Milk Delivery App",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
@@ -33,3 +33,4 @@
         }
     ]
 }
+

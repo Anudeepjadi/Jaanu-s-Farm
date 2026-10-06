@@ -1,9 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'home_screen.dart';
+import 'firebase_options.dart';
 import 'login_screen.dart';
 
-void main() {
-  runApp(const JaanuFarmsApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  try {
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    }
+  } catch (e) {
+    debugPrint("Firebase initialization failed: $e");
+  }
+  runApp(const ProviderScope(child: JaanuFarmsApp()));
 }
 
 class JaanuFarmsApp extends StatelessWidget {
@@ -46,24 +62,37 @@ class _SplashScreenState extends State<SplashScreen>
   void initState() {
     super.initState();
 
-    Future.delayed(const Duration(seconds: 4), () {
+    // Inside _SplashScreenState initState logic
+    Future.delayed(const Duration(seconds: 3), () {
       if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
-      );
+
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        String displayName =
+            user.displayName ?? user.email?.split('@')[0] ?? "User";
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => HomeScreen(name: displayName)),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+        );
+      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.2),
+      backgroundColor: Theme.of(
+        context,
+      ).colorScheme.primaryContainer.withValues(alpha: 0.2),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-
             Lottie.asset('assets/animations/Milk.json', height: 280),
 
             const SizedBox(height: 20),
@@ -80,7 +109,7 @@ class _SplashScreenState extends State<SplashScreen>
             const SizedBox(height: 10),
 
             const Text(
-              " Fresh Milk🥛• Pure Quality💯• Fast Delivery🚚",
+              "Fresh Milk 🥛 • Pure Quality 💯 • Fast Delivery 🚚",
               style: TextStyle(fontSize: 16, color: Colors.black54),
             ),
           ],
