@@ -1,4 +1,4 @@
-# 🥛 Janus Farm's - Fresh Milk Delivery App
+# 🥛 Jaanu's Farm - Fresh Milk Delivery App
 
 > Premium Fresh Milk Delivery at Your Doorstep
 
