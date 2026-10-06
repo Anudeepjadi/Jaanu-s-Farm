@@ -9,8 +9,7 @@ class ManageAddressesScreen extends StatefulWidget {
 
 class _ManageAddressesScreenState extends State<ManageAddressesScreen> {
   final List<String> _addresses = [
-    "123, Green Farm Road, Dairy Colony, City - 400001",
-    "Flat 402, Sunshine Apartments, Main Street, City - 400005",
+    "Plot - 1,RoadNo - 1, Vaishnavi nagar, suraram, Hyderabad - 500055",
   ];
 
   void _addNewAddress() {
@@ -49,17 +48,17 @@ class _ManageAddressesScreenState extends State<ManageAddressesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Manage Addresses"),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text("Manage Addresses"), centerTitle: true),
       body: _addresses.isEmpty
           ? const Center(child: Text("No addresses saved yet."))
           : ListView.builder(
               itemCount: _addresses.length,
               itemBuilder: (context, index) {
                 return Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 15,
+                    vertical: 8,
+                  ),
                   child: ListTile(
                     leading: const Icon(Icons.location_on, color: Colors.green),
                     title: Text(_addresses[index]),
