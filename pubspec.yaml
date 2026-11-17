@@ -73,7 +73,7 @@ flutter:
     - assets/images/buffalo_milk.png
     - assets/images/organic_milk.png
     - assets/images/paneer.png
-    - assets/icons/Janus farm's.jpeg
+    - assets/icons/Janus_farms.jpeg
 
 
   # To add assets to your application, add an assets section, like this:
@@ -86,7 +86,7 @@ flutter:
 flutter_icons:
   android: true
   ios: true
-  image_path: "assets/icons/Janus farm's.jpeg"
+  image_path: "assets/icons/Janus_farms.jpeg"
 
 
   # An image asset can refer to one or more resolution-specific "variants", see
