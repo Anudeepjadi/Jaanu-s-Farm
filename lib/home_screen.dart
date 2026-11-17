@@ -6,6 +6,7 @@ import 'location_picker_screen.dart';
 import 'orders_screen.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:lottie/lottie.dart';
+import 'dart:async';
 import 'package:shimmer/shimmer.dart';
 import 'firebase_service.dart';
 import 'providers/cart_provider.dart';
@@ -158,11 +159,18 @@ class _ShopViewState extends ConsumerState<ShopView> {
   String searchQuery = "";
   bool _isLoadingProducts = true;
   List<Map<String, String>> allProducts = [];
+  Timer? _debounce;
 
   @override
   void initState() {
     super.initState();
     _fetchProducts();
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
   }
 
   Future<void> _fetchProducts() async {
@@ -217,11 +225,12 @@ class _ShopViewState extends ConsumerState<ShopView> {
             SliverAppBar(
               floating: true,
               pinned: true,
-              backgroundColor: Colors.white,
-              elevation: 2,
-              shadowColor: Colors.black12,
+              stretch: true,
+              backgroundColor: Colors.white.withValues(alpha: 0.95),
+              elevation: 0,
               expandedHeight: 140,
               flexibleSpace: FlexibleSpaceBar(
+                stretchModes: const [StretchMode.zoomBackground, StretchMode.blurBackground],
                 background: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                   child: Column(
@@ -280,7 +289,12 @@ class _ShopViewState extends ConsumerState<ShopView> {
                   color: Colors.white,
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   child: TextField(
-                    onChanged: (value) => setState(() => searchQuery = value),
+                    onChanged: (value) {
+                      if (_debounce?.isActive ?? false) _debounce!.cancel();
+                      _debounce = Timer(const Duration(milliseconds: 300), () {
+                        setState(() => searchQuery = value);
+                      });
+                    },
                     decoration: InputDecoration(
                       hintText: "Search for milk, paneer, ghee...",
                       hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 14),
@@ -396,11 +410,15 @@ class _ShopViewState extends ConsumerState<ShopView> {
         ),
         
         // Persistent Cart Snackbar (Blinkit style)
-        if (totalItems > 0)
-          Positioned(
-            bottom: 16,
-            left: 16,
-            right: 16,
+        AnimatedPositioned(
+          duration: const Duration(milliseconds: 350),
+          curve: Curves.easeOutBack,
+          bottom: totalItems > 0 ? 16 : -100, // Slide up/down
+          left: 16,
+          right: 16,
+          child: AnimatedOpacity(
+            duration: const Duration(milliseconds: 250),
+            opacity: totalItems > 0 ? 1.0 : 0.0,
             child: GestureDetector(
               onTap: widget.onViewCart,
               child: Container(
@@ -441,6 +459,7 @@ class _ShopViewState extends ConsumerState<ShopView> {
               ),
             ),
           ),
+        ),
       ],
     ),
   ),
@@ -450,20 +469,26 @@ class _ShopViewState extends ConsumerState<ShopView> {
   Widget categoryItem(String title, IconData icon, Color bgColor, Color iconColor) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8),
-      child: Column(
-        children: [
-          Container(
-            height: 70,
-            width: 70,
-            decoration: BoxDecoration(
-              color: bgColor,
-              borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: () {
+          // Add haptic feedback or filter in future
+        },
+        borderRadius: BorderRadius.circular(16),
+        child: Column(
+          children: [
+            Container(
+              height: 70,
+              width: 70,
+              decoration: BoxDecoration(
+                color: bgColor,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(icon, color: iconColor, size: 32),
             ),
-            child: Icon(icon, color: iconColor, size: 32),
-          ),
-          const SizedBox(height: 8),
-          Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.black87)),
-        ],
+            const SizedBox(height: 8),
+            Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.black87)),
+          ],
+        ),
       ),
     );
   }
@@ -571,50 +596,70 @@ class _ShopViewState extends ConsumerState<ShopView> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(price, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: Colors.black87)),
-                        if (qty == 0)
-                          GestureDetector(
-                            onTap: () {
-                              ref.read(cartProvider.notifier).addToCart(title, price, imagePath);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text("Added $title to Cart 🥛"), duration: const Duration(milliseconds: 600)),
-                              );
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                border: Border.all(color: Colors.green.shade700, width: 1),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text("ADD", style: TextStyle(color: Colors.green.shade700, fontWeight: FontWeight.w800, fontSize: 12)),
-                            ),
-                          )
-                        else
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Colors.green.shade700,
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Row(
-                              children: [
-                                InkWell(
-                                  onTap: () => ref.read(cartProvider.notifier).updateQuantity(cartIndex, -1),
-                                  child: const Padding(
-                                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                                    child: Icon(Icons.remove, color: Colors.white, size: 16),
+                        AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 300),
+                          transitionBuilder: (Widget child, Animation<double> animation) {
+                            return ScaleTransition(scale: animation, child: child);
+                          },
+                          child: (qty == 0)
+                              ? GestureDetector(
+                                  key: const ValueKey('add_btn'),
+                                  onTap: () {
+                                    ref.read(cartProvider.notifier).addToCart(title, price, imagePath);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text("Added $title to Cart 🥛"), duration: const Duration(milliseconds: 600)),
+                                    );
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      border: Border.all(color: Colors.green.shade700, width: 1),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text("ADD", style: TextStyle(color: Colors.green.shade700, fontWeight: FontWeight.w800, fontSize: 12)),
+                                  ),
+                                )
+                              : Container(
+                                  key: const ValueKey('qty_selector'),
+                                  decoration: BoxDecoration(
+                                    color: Colors.green.shade700,
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      InkWell(
+                                        onTap: () => ref.read(cartProvider.notifier).updateQuantity(cartIndex, -1),
+                                        child: const Padding(
+                                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                          child: Icon(Icons.remove, color: Colors.white, size: 16),
+                                        ),
+                                      ),
+                                      AnimatedSwitcher(
+                                        duration: const Duration(milliseconds: 200),
+                                        transitionBuilder: (Widget child, Animation<double> animation) {
+                                          return SlideTransition(
+                                            position: Tween<Offset>(begin: const Offset(0.0, -0.5), end: Offset.zero).animate(animation),
+                                            child: child,
+                                          );
+                                        },
+                                        child: Text(
+                                          "$qty", 
+                                          key: ValueKey(qty),
+                                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)
+                                        ),
+                                      ),
+                                      InkWell(
+                                        onTap: () => ref.read(cartProvider.notifier).updateQuantity(cartIndex, 1),
+                                        child: const Padding(
+                                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                          child: Icon(Icons.add, color: Colors.white, size: 16),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                Text("$qty", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
-                                InkWell(
-                                  onTap: () => ref.read(cartProvider.notifier).updateQuantity(cartIndex, 1),
-                                  child: const Padding(
-                                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                                    child: Icon(Icons.add, color: Colors.white, size: 16),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                        ),
                       ],
                     ),
                   ],
